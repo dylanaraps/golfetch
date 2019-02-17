@@ -7,7 +7,7 @@ title() {
 }
 
 distro() {
-    . /etc/os-release &>/dev/null
+    . /etc/os-release
     distro="${PRETTY_NAME:-Linux}"
 }
 
