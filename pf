@@ -1,72 +1,10 @@
 #!/usr/bin/env bash
-#
-# Tiny info script.
-
-title() {
-    title="${USER:-$(whoami)}@${HOSTNAME:-$(hostname)}"
-}
-
-distro() {
-    . /etc/os-release
-    distro="${PRETTY_NAME:-Linux}"
-}
-
-kernel() {
-    read -r _ _ kernel _ < /proc/version
-}
-
-shell() {
-    shell="${SHELL##*/}"
-}
-
-uptime() {
-    s=$(< /proc/uptime)
-    s=${s/.*}
-
-    ((d=s/60/60/24, h=s/60/60%24, m=s/60%60))
-
-    ((d)) && uptime+="${d}d "
-    ((h)) && uptime+="${h}h "
-    ((m)) && uptime+="${m}m"
-}
-
-memory() {
-    while IFS=: read -r a b; do
-        b=${b/kB}
-
-        case $a in
-            MemTotal)((mem_used+=b,mem_total=b)) ;;
-            Shmem)((mem_used+=b)) ;;
-            MemFree|Buffers|Cached|SReclaimable) ((mem_used-=b)) ;;
-        esac
-    done </proc/meminfo
-
-    ((mem_used/=1024,mem_total/=1024))
-    memory="${mem_used}MiB / ${mem_total}MiB"
-}
-
-model() {
-    model="$(< /sys/devices/virtual/dmi/id/product_version) "
-    model+="$(< /sys/devices/virtual/dmi/id/product_name)"
-    model="${model//*O.E.M*}"
-}
-
-{
-title
-distro
-shell
-model
-uptime
-memory
-kernel
-} 2>/dev/null
-
-echo "
-    ___     $title
-   (.· |    os: $distro
-   (<> |    shell: $shell
-  / __  \   model: $model
- ( /  \ /|  uptime: $uptime
-_/\ __)/_)  memory: $memory
-\/-____\/   kernel: $kernel
-"
+(k=(`</pr*/ver*`);s=`</pr*/upt*`;s=${s/.*};((d=s/60/60/24,h=s/60/60%24,m=s/60%60));((d))&&u+=$d\d\ ;((h))&&u+=$h\h\ ;((m))&&u+=$m\m\ ;p=/sys/devi*/vi*/dmi/id/product_;m=`<$p\na*`\ `<$p\ver*`;[[ $m == *O.E* || ! ${m/ } ]]&&m=\?;. /etc/os-*;while IFS=: read -r a b; do b=${b/kB};case $a in MemT*)((z+=b,y=b));;Shmem)((z+=b));;MemF*|Buf*|Cac*|SR*)((z-=b));esac;done</pr*/me*;((z/=1024,y/=1024));echo "
+___     ${USER:-`whoami`}@${HOSTNAME:-`hostname`}
+   (.· |    os: ${PRETTY_NAME:-Linux}
+   (<> |    shell: ${SHELL##*/}
+  / __  \   model: $m
+ ( /  \ /|  uptime: ${u:-?}
+_/\ __)/_)  memory: ${z:-?}MiB / ${y:-?}MiB
+\/-____\/   kernel: ${k[2]:-?}
+") 2>/dev/null
