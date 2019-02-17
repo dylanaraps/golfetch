@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+#
+# Tiny info script.
+
+title() {
+    title="${USER:-$(whoami)}@${HOSTNAME:-$(hostname)}"
+}
+
+distro() {
+    . /etc/os-release &>/dev/null
+    distro="${PRETTY_NAME:-Linux}"
+}
+
+kernel() {
+    read -r _ _ kernel _ < /proc/version
+}
+
+shell() {
+    shell="${SHELL##*/}"
+}
+
+uptime() {
+    s=$(< /proc/uptime)
+    s=${s/.*}
+
+    ((d=s/60/60/24, h=s/60/60%24, m=s/60%60))
+
+    ((d)) && uptime+="${d}d "
+    ((h)) && uptime+="${h}h "
+    ((m)) && uptime+="${m}m"
+}
+
+memory() {
+    while IFS=: read -r a b; do
+        b=${b/kB}
+
+        case $a in
+            MemTotal)((mem_used+=b,mem_total=b)) ;;
+            Shmem)((mem_used+=b)) ;;
+            MemFree|Buffers|Cached|SReclaimable) ((mem_used-=b)) ;;
+        esac
+    done </proc/meminfo
+
+    ((mem_used/=1024,mem_total/=1024))
+    memory="${mem_used}MiB / ${mem_total}MiB"
+}
+
+model() {
+    model="$(< /sys/devices/virtual/dmi/id/product_version) "
+    model+="$(< /sys/devices/virtual/dmi/id/product_name)"
+    model="${model//*O.E.M*}"
+}
+
+{
+title
+distro
+shell
+model
+uptime
+memory
+kernel
+} 2>/dev/null
+
+echo "
+    ___     $title
+   (.· |    os: $distro
+   (<> |    shell: $shell
+  / __  \   model: $model
+ ( /  \ /|  uptime: $uptime
+_/\ __)/_)  memory: $memory
+\/-____\/   kernel: $kernel
+"
